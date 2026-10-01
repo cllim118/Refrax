@@ -4,7 +4,7 @@ Usage:
     python visualise_refraction.py configs/lizardisland.yaml
 
 Renders a checkerboard at depth correction.z0_fixed as seen through the
-housing, corrects it with the configured method and zoom, and plots the
+housing, corrects it with the configured zoom, and plots the
 per-pixel displacement of the correction.
 """
 import argparse
@@ -15,10 +15,9 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 from core.config import load_config, camera_params, housing_params
-from core.optics import matrix_K, trace_underwater
+from core.optics import matrix_K
 from core.scale import select_zoom
 from core.undistort import compute_housing_geometry, forward_map, invert_map
-from core.undistort_newton import build_undistort_map_newton
 
 BOARD_COLS, BOARD_ROWS, SQUARE_SIZE = 10, 10, 0.1
 
@@ -66,7 +65,6 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    method = cfg["method"]
     W, H, fx, fy, cx, cy = camera_params(cfg)
     housing = housing_params(cfg)
     Z0 = cfg["correction"]["z0_fixed"]
@@ -77,21 +75,14 @@ def main():
     _, K_inv = matrix_K(fx, fy, cx, cy)
     u_grid, v_grid = np.meshgrid(np.arange(W, dtype=float), np.arange(H, dtype=float))
 
-    if method == "closed_form":
-        P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
-        fwd_x, fwd_y = forward_map(P2, ray_water, Z0, fx, fy, cx, cy)
-        map_u, map_v = invert_map((fwd_x - cx) * zoom + cx, (fwd_y - cy) * zoom + cy, H, W)
-    else:
-        newton_kwargs = dict(K_inv=K_inv, **housing)
-        P_water = trace_underwater(u_grid, v_grid, Z0=Z0, **newton_kwargs)
-        fwd_x = fx * P_water[..., 0] / Z0 + cx
-        fwd_y = fy * P_water[..., 1] / Z0 + cy
-        map_u, map_v = build_undistort_map_newton(fx, fy, cx, cy, Z0, newton_kwargs, W, H, zoom=zoom)
+    P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
+    fwd_x, fwd_y = forward_map(P2, ray_water, Z0, fx, fy, cx, cy)
+    map_u, map_v = invert_map((fwd_x - cx) * zoom + cx, (fwd_y - cy) * zoom + cy, H, W)
 
     disparity = np.sqrt((map_u - u_grid) ** 2 + (map_v - v_grid) ** 2)
     rmse = np.sqrt(np.nanmean(disparity ** 2))
     p95 = np.nanpercentile(disparity, 95)
-    print(f"method={method} | Z0={Z0}, zoom={zoom:.4f}")
+    print(f"Z0={Z0}, zoom={zoom:.4f}")
     print(f"pixel movement: RMSE={rmse:.2f}px, max={np.nanmax(disparity):.2f}px, p95={p95:.2f}px")
 
     # Underwater view of the board: each pixel sees the world point traced through the housing.
@@ -104,7 +95,7 @@ def main():
     img_corrected = cv2.remap(img_underwater, map_u_f, map_v_f, cv2.INTER_LINEAR)
 
     fig, axes = plt.subplots(1, 3, figsize=(16, 6))
-    fig.suptitle(f"{method} | rflat={housing['rflat']}, tglass={housing['tglass']}, "
+    fig.suptitle(f"rflat={housing['rflat']}, tglass={housing['tglass']}, "
                  f"Z0={Z0}, zoom={zoom:.4f}", fontsize=12)
     axes[0].imshow(img_underwater, cmap=blue_gray, vmin=0, vmax=255)
     axes[0].set_title(f"underwater ({W}x{H})")

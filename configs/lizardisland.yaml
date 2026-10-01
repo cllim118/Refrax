@@ -1,5 +1,3 @@
-method: closed_form   # "closed_form" or "newton"
-
 # In-air pinhole intrinsics (px) and optional radial-tangential distortion
 camera:
   W: 593

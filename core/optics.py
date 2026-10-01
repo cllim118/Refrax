@@ -89,11 +89,3 @@ def apply_radtan_distortion(x_norm, y_norm, k1, k2, p1, p2):
     y_dist = y_norm * radial + p1 * (r2 + 2 * y_norm ** 2) + 2 * p2 * x_norm * y_norm
 
     return x_dist, y_dist
-
-
-def get_inair_world(u, v, fx, fy, cx, cy, Z0):
-    """In-air pixel (u, v) -> world point at depth Z0 (pinhole, no refraction)."""
-    X = (u - cx) / fx * Z0
-    Y = (v - cy) / fy * Z0
-
-    return np.stack([X, Y, np.full_like(X, Z0)], axis=-1)

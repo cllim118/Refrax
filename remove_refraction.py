@@ -23,11 +23,9 @@ from core.config import load_config, camera_params, distortion_params, housing_p
 from core.optics import matrix_K, apply_radtan_distortion
 from core.scale import select_zoom
 from core.undistort import compute_housing_geometry, build_undistort_map_closed_form
-from core.undistort_newton import build_undistort_map_newton
 
 IMAGE_EXTS = ["*.jpg", "*.JPG", "*.jpeg", "*.JPEG", "*.png", "*.PNG",
               "*.bmp", "*.BMP", "*.tiff", "*.TIFF"]
-METHODS = ("closed_form", "newton")
 
 
 def find_rgb_paths(rgb_dir, step_size):
@@ -46,25 +44,19 @@ def load_depth(name, depth_dir, W, H):
     return np.clip(depth, 1e-3, None)
 
 
-def make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom):
+def make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom):
     """Returns build_map(depth) -> (map_x, map_y), float32 maps for cv2.remap.
 
     Pixels without a source are set to -1. If radtan distortion coefficients are
     non-zero, the map points into the distorted (raw) image.
     """
     _, K_inv = matrix_K(fx, fy, cx, cy)
-    if method == "closed_form":
-        P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
-    newton_kwargs = dict(K_inv=K_inv, **housing)
+    P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
     apply_radtan = any(d != 0.0 for d in distortion)
 
     def build_map(depth):
-        if method == "closed_form":
-            map_x, map_y = build_undistort_map_closed_form(
-                P2, ray_water, depth, fx, fy, cx, cy, H, W, zoom=zoom)
-        else:
-            map_x, map_y = build_undistort_map_newton(
-                fx, fy, cx, cy, depth, newton_kwargs, W, H, zoom=zoom)
+        map_x, map_y = build_undistort_map_closed_form(
+            P2, ray_water, depth, fx, fy, cx, cy, H, W, zoom=zoom)
 
         if apply_radtan:
             x_dist, y_dist = apply_radtan_distortion(
@@ -135,10 +127,6 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    method = cfg["method"]
-    if method not in METHODS:
-        raise ValueError(f"method must be one of {METHODS}, got {method!r}")
-
     W, H, fx, fy, cx, cy = camera_params(cfg)
     distortion = distortion_params(cfg)
     housing = housing_params(cfg)
@@ -165,10 +153,10 @@ def main():
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(mask_dir, exist_ok=True)
-    build_map = make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom)
+    build_map = make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom)
 
     rgb_paths = find_rgb_paths(rgb_dir, step_size)
-    print(f"Found {len(rgb_paths)} images (step={step_size}), method={method}, "
+    print(f"Found {len(rgb_paths)} images (step={step_size}), "
           f"crop_valid_bbox={crop_valid_bbox}, "
           f"radtan={any(d != 0.0 for d in distortion)}")
 
