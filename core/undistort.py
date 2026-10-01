@@ -1,10 +1,11 @@
+"""Closed-form refraction correction: forward map + scattered-data inversion."""
 import numpy as np
 from scipy.interpolate import griddata
 from core.optics import normalize_batch, refract_batch, intersect_plane_batch
 
 
 def compute_housing_geometry(H, W, K_inv, n_port, rflat, tglass, mu_a, mu_g, mu_w):
-    """depth-independent housing geometry(P2, ray_water)"""
+    """Depth-independent part of the trace: exit point P2 on the port and water ray per pixel."""
     u, v = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32))
     pixels = np.stack([u, v, np.ones((H, W), dtype=np.float32)], axis=-1)
     rays   = normalize_batch(pixels @ K_inv.T)
@@ -20,6 +21,7 @@ def compute_housing_geometry(H, W, K_inv, n_port, rflat, tglass, mu_a, mu_g, mu_
 
 
 def forward_map(P2, ray_water, depth, fx, fy, cx, cy):
+    """Pinhole projection (fx, fy, cx, cy) of the point each underwater pixel sees at `depth`."""
     Z = np.asarray(depth, dtype=np.float32)
     if Z.ndim == 0:
         Z = np.full(P2.shape[:2], float(Z), dtype=np.float32)
@@ -37,6 +39,10 @@ def forward_map(P2, ray_water, depth, fx, fy, cx, cy):
 
 
 def invert_map(map_x, map_y, H, W, step=4):
+    """Inverts a forward map by linear interpolation over a subsampled grid (every `step` px).
+
+    Pixels outside the convex hull of the forward map are NaN.
+    """
     u_s = np.arange(0, W, step)
     v_s = np.arange(0, H, step)
     ug_s, vg_s = np.meshgrid(u_s, v_s)
@@ -49,7 +55,9 @@ def invert_map(map_x, map_y, H, W, step=4):
     undist_y = griddata(src, vg_s.ravel().astype(np.float32), (ug_full, vg_full), method='linear')
     return undist_x.astype(np.float32), undist_y.astype(np.float32)
 
+
 def build_undistort_map_closed_form(P2, ray_water, depth, fx, fy, cx, cy, H, W, zoom=None):
+    """Undistortion map for cv2.remap: corrected pixel -> underwater pixel."""
     map_x, map_y = forward_map(P2, ray_water, depth, fx, fy, cx, cy)
     if zoom is not None:
         map_x = (map_x - cx) * zoom + cx

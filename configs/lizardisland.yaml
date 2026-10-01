@@ -1,10 +1,11 @@
 method: closed_form   # "closed_form" or "newton"
 
+# In-air pinhole intrinsics (px) and optional radial-tangential distortion
 camera:
   W: 593
   H: 518
-  fx: 288.28  # 383.418 / 1.33
-  fy: 287.51  # 382.382 / 1.33
+  fx: 288.28
+  fy: 287.51
   cx: 296.892
   cy: 260.068
   k1: 0
@@ -12,21 +13,24 @@ camera:
   p1: 0
   p2: 0
 
+# Flat-port housing. Lengths in the same unit as depths (metres here).
 housing:
-  n_port: [0.0, 0.0, 1.0]
-  mu_a: 1.0
-  mu_g: 1.47
-  mu_w: 1.33
-  rflat: 0.02
-  tglass: 0.002
+  n_port: [0.0, 0.0, 1.0]   # port normal in the camera frame
+  mu_a: 1.0                 # refractive index of air
+  mu_g: 1.47                # refractive index of the port glass
+  mu_w: 1.34                # refractive index of water
+  rflat: 0.02               # camera centre to inner port surface
+  tglass: 0.002             # port thickness
 
 paths:
   rgb_dir: "./input/rgb"
   output_dir: "./output/corrected"
   mask_dir: "./output/mask"
-  depth_dir: null   # null = single fixed depth mode
+  depth_dir: null   # null = single fixed depth (z0_fixed); else per-image <name>.npy depth maps
+  # calib_path: "./output/new_calibration.yaml"   # default: next to output_dir
 
 correction:
-  z0_fixed: 1.5
-  step_size: 1
-  crop_valid_bbox: true
+  z0_fixed: 1.0           # scene depth for fixed-depth mode and the zoom search
+  zoom: null              # null = automatic (best in-bounds zoom at z0_fixed)
+  step_size: 1            # process every n-th image
+  crop_valid_bbox: true   # crop to the largest rectangle without invalid pixels

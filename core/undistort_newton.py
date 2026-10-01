@@ -1,8 +1,10 @@
+"""Iterative refraction correction: per-pixel Newton solve of the inverse trace."""
 import numpy as np
 from core.optics import trace_underwater, get_inair_world
 
 
 def _jacobian(u, v, depth_at_uv, kwargs, h=0.5):
+    """Central-difference Jacobian d(Px, Py)/d(u, v) of the underwater trace."""
     Pu1 = trace_underwater(u + h, v, Z0=depth_at_uv, **kwargs)
     Pu0 = trace_underwater(u - h, v, Z0=depth_at_uv, **kwargs)
     Pv1 = trace_underwater(u, v + h, Z0=depth_at_uv, **kwargs)
@@ -18,6 +20,7 @@ def _jacobian(u, v, depth_at_uv, kwargs, h=0.5):
 
 
 def _solve(P_air, u0, v0, depth_map, kwargs, W, H, max_iter=20, tol=1e-9, damping=1.0):
+    """Finds (u, v) such that trace_underwater(u, v) matches P_air in X and Y."""
     shape  = u0.shape
     u_flat = u0.astype(np.float64).ravel().copy()
     v_flat = v0.astype(np.float64).ravel().copy()
@@ -63,7 +66,10 @@ def _solve(P_air, u0, v0, depth_map, kwargs, W, H, max_iter=20, tol=1e-9, dampin
 
 
 def build_undistort_map_newton(fx, fy, cx, cy, depth, kwargs, W, H, zoom=1.4):
-    """Newton's method: iterative per pixel"""
+    """Undistortion map for cv2.remap via Newton's method.
+
+    kwargs are the trace_underwater arguments (K_inv and the housing parameters).
+    """
     u_grid, v_grid = np.meshgrid(np.arange(W, dtype=np.float64), np.arange(H, dtype=np.float64))
 
     if np.isscalar(depth):

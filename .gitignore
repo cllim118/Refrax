@@ -1,3 +1,8 @@
+__pycache__/
+.pixi/
+
+# data and results
+input/
+output/
 00/
 depth/
-__pycache__/

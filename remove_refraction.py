@@ -1,28 +1,42 @@
-import os
-import sys
-import glob
-import argparse
-import yaml
-import numpy as np
-import cv2
+"""Removes flat-port refraction from underwater images.
 
+Usage:
+    python remove_refraction.py configs/lizardisland.yaml [--overwrite]
+
+Every image in paths.rgb_dir is warped to a refraction-free pinhole image with
+focal length zoom * (fx, fy). Outputs:
+    <output_dir>/<name>.png  corrected image; cropped to the largest rectangle
+                             without invalid pixels if correction.crop_valid_bbox,
+                             otherwise BGRA with the validity mask as alpha
+    <mask_dir>/mask.png      validity mask (<mask_dir>/<name>.png per image when
+                             a depth map is given per image)
+    <calib_path>             intrinsics of the corrected images (fixed-depth mode)
+"""
+import argparse
+import glob
+import os
+
+import cv2
+import numpy as np
+
+from core.config import load_config, camera_params, distortion_params, housing_params
 from core.optics import matrix_K, apply_radtan_distortion
+from core.scale import select_zoom
 from core.undistort import compute_housing_geometry, build_undistort_map_closed_form
 from core.undistort_newton import build_undistort_map_newton
-from core.find_best_scale import find_optimal_scale, find_in_bounds_scale
 
 IMAGE_EXTS = ["*.jpg", "*.JPG", "*.jpeg", "*.JPEG", "*.png", "*.PNG",
               "*.bmp", "*.BMP", "*.tiff", "*.TIFF"]
+METHODS = ("closed_form", "newton")
 
 
-def load_config(config_path):
-    with open(config_path) as f:
-        return yaml.safe_load(f)
+def find_rgb_paths(rgb_dir, step_size):
+    paths = sorted(p for ext in IMAGE_EXTS for p in glob.glob(f"{rgb_dir}/{ext}"))
+    return paths[::step_size]
 
 
-def load_depth(name, depth_dir, z0_fixed, W, H):
-    if depth_dir is None:
-        return z0_fixed
+def load_depth(name, depth_dir, W, H):
+    """Per-image depth map <depth_dir>/<name>.npy resized to (W, H), or None if missing."""
     depth_path = f"{depth_dir}/{name}.npy"
     if not os.path.exists(depth_path):
         return None
@@ -32,39 +46,57 @@ def load_depth(name, depth_dir, z0_fixed, W, H):
     return np.clip(depth, 1e-3, None)
 
 
-def compute_valid_mask(undist_x, undist_y, w_src, h_src):
-    """255 = source pixel is in bounds, 0 = out-of-bounds / black region."""
+def make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom):
+    """Returns build_map(depth) -> (map_x, map_y), float32 maps for cv2.remap.
+
+    Pixels without a source are set to -1. If radtan distortion coefficients are
+    non-zero, the map points into the distorted (raw) image.
+    """
+    _, K_inv = matrix_K(fx, fy, cx, cy)
+    if method == "closed_form":
+        P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
+    newton_kwargs = dict(K_inv=K_inv, **housing)
+    apply_radtan = any(d != 0.0 for d in distortion)
+
+    def build_map(depth):
+        if method == "closed_form":
+            map_x, map_y = build_undistort_map_closed_form(
+                P2, ray_water, depth, fx, fy, cx, cy, H, W, zoom=zoom)
+        else:
+            map_x, map_y = build_undistort_map_newton(
+                fx, fy, cx, cy, depth, newton_kwargs, W, H, zoom=zoom)
+
+        if apply_radtan:
+            x_dist, y_dist = apply_radtan_distortion(
+                (map_x - cx) / fx, (map_y - cy) / fy, *distortion)
+            map_x, map_y = x_dist * fx + cx, y_dist * fy + cy
+
+        return (np.nan_to_num(map_x, nan=-1).astype(np.float32),
+                np.nan_to_num(map_y, nan=-1).astype(np.float32))
+
+    return build_map
+
+
+def compute_valid_mask(map_x, map_y, W, H):
+    """255 where the map samples inside the (W, H) source image, 0 elsewhere."""
     valid = (
-        (undist_x >= 0) & (undist_x <= w_src - 1) &
-        (undist_y >= 0) & (undist_y <= h_src - 1)
+        (map_x >= 0) & (map_x <= W - 1) &
+        (map_y >= 0) & (map_y <= H - 1)
     )
     return np.where(valid, 255, 0).astype(np.uint8)
 
 
-def remap_with_mask(img, undist_x, undist_y):
-    """Remap the image and compute its validity mask."""
-    h_src, w_src = img.shape[:2]
-    corrected = cv2.remap(
-        img, undist_x, undist_y, cv2.INTER_LINEAR,
-        borderMode=cv2.BORDER_CONSTANT, borderValue=0
-    )
-    mask = compute_valid_mask(undist_x, undist_y, w_src, h_src)
-    return corrected, mask
+def largest_valid_rectangle(mask):
+    """Largest axis-aligned rectangle of non-zero mask pixels, as (y0, y1, x0, x1).
 
-
-def to_rgba(corrected_bgr, mask):
-    bgra = cv2.cvtColor(corrected_bgr, cv2.COLOR_BGR2BGRA)
-    bgra[..., 3] = mask
-    return bgra
-
-
-def find_largest_valid_rectangle(mask):
+    Row-by-row largest-rectangle-in-histogram; falls back to the whole image.
+    """
     H, W = mask.shape
     valid = mask > 0
 
     height = np.zeros(W, dtype=np.int32)
     best_area = 0
-    best_box = (0, H, 0, W)  # fallback: whole image
+    best_box = (0, H, 0, W)
 
     for y in range(H):
         height = np.where(valid[y], height + 1, 0)
@@ -85,194 +117,124 @@ def find_largest_valid_rectangle(mask):
     return best_box
 
 
-def crop_to_inscribed_rectangle(img, box):
-    y0, y1, x0, x1 = box
-    return img[y0:y1, x0:x1]
-
-
-def adjust_intrinsics_for_crop(cx, cy, box):
-    y0, y1, x0, x1 = box
-    return cx - x0, cy - y0
-
-
-def write_output_calibration(path, W, H, fx, fy, cx, cy, s):
+def write_calibration(path, W, H, fx, fy, cx, cy, zoom):
     with open(path, "w") as f:
         f.write(f"focal_length: [{fx:.6f}, {fy:.6f}]\n")
         f.write(f"principal_point: [{cx:.6f}, {cy:.6f}]\n")
         f.write("distortion_coefficients: [0, 0, 0, 0]\n")
         f.write(f"image_dimension: [{W}, {H}]\n")
-        f.write(f"zoom: {s:.6f}\n")
-
+        f.write(f"zoom: {zoom:.6f}\n")
     print(f"Saved calibration: {path}")
-
-
-def find_rgb_paths(rgb_dir, step_size):
-    paths = sorted(p for ext in IMAGE_EXTS for p in glob.glob(f"{rgb_dir}/{ext}"))
-    return paths[::step_size]
 
 
 def main():
     parser = argparse.ArgumentParser(description="Refraction removal from a YAML config")
     parser.add_argument("config", help="Path to config YAML file")
+    parser.add_argument("--overwrite", action="store_true",
+                        help="Recompute images whose output already exists")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
     method = cfg["method"]
+    if method not in METHODS:
+        raise ValueError(f"method must be one of {METHODS}, got {method!r}")
 
-    cam = cfg["camera"]
-    W, H = cam["W"], cam["H"]
-    fx, fy = cam["fx"], cam["fy"]
-    cx, cy = cam["cx"], cam["cy"]
-
-    k1, k2 = cam.get("k1", 0.0), cam.get("k2", 0.0)
-    p1, p2 = cam.get("p1", 0.0), cam.get("p2", 0.0)
-    apply_radtan = any(v != 0.0 for v in (k1, k2, p1, p2))
-
-    hs = cfg["housing"]
-    n_port = np.array(hs["n_port"])
-    mu_a, mu_g, mu_w = hs["mu_a"], hs["mu_g"], hs["mu_w"]
-    rflat, tglass = hs["rflat"], hs["tglass"]
+    W, H, fx, fy, cx, cy = camera_params(cfg)
+    distortion = distortion_params(cfg)
+    housing = housing_params(cfg)
 
     paths = cfg["paths"]
-    rgb_dir = paths["rgb_dir"]
-    output_dir = paths["output_dir"]
-    mask_dir = paths["mask_dir"]
+    rgb_dir, output_dir, mask_dir = paths["rgb_dir"], paths["output_dir"], paths["mask_dir"]
     depth_dir = paths.get("depth_dir")
-    calib_path = paths.get("calib_path",os.path.join(os.path.dirname(output_dir), "new_calibration.yaml"))
+    calib_path = paths.get("calib_path",
+                           os.path.join(os.path.dirname(output_dir), "new_calibration.yaml"))
 
     corr = cfg["correction"]
     z0_fixed = corr["z0_fixed"]
     step_size = corr.get("step_size", 1)
     crop_valid_bbox = corr.get("crop_valid_bbox", False)
-
-    print("Finding optimal zoom...")
-
-    map_x, map_y, s_values, rmse_values, _, _ = find_optimal_scale(
-        z0_fixed, W, H, fx, fy, cx, cy,
-        n_port, rflat, tglass, mu_a, mu_g, mu_w
-    )
-
-    zoom, zoom_rmse = find_in_bounds_scale(
-        map_x, map_y, s_values, rmse_values,
-        W, H, cx, cy
-    )
+    zoom = corr.get("zoom")
 
     if zoom is None:
-        raise RuntimeError(
-            "No in-bounds zoom found in the search range."
-        )
-
-    print(f"Best scale in bounds = {zoom:.4f}")
-    print(f"RMSE = {zoom_rmse:.4f} px")
-
+        print(f"Finding optimal zoom at Z0={z0_fixed}...")
+        zoom, zoom_rmse = select_zoom(z0_fixed, W, H, fx, fy, cx, cy, housing)
+        print(f"Best scale in bounds = {zoom:.4f}")
+        print(f"RMSE = {zoom_rmse:.4f} px")
+    else:
+        print(f"Using zoom from config = {zoom:.4f}")
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(mask_dir, exist_ok=True)
-    K, K_inv = matrix_K(fx, fy, cx, cy)
-
-    if method == "closed_form":
-        P2, ray_water = compute_housing_geometry(H, W, K_inv, n_port, rflat, tglass, mu_a, mu_g, mu_w)
-    else:
-        newton_kwargs = dict(K_inv=K_inv, n_port=n_port, rflat=rflat, tglass=tglass,
-                              mu_a=mu_a, mu_g=mu_g, mu_w=mu_w)
-
-    def build_map(z_or_depth, zoom_val):
-        if method == "closed_form":
-            return build_undistort_map_closed_form(
-                P2, ray_water, z_or_depth, fx, fy, cx, cy, H, W, zoom=zoom_val
-            )
-        return build_undistort_map_newton(
-            fx, fy, cx, cy, z_or_depth, newton_kwargs, W, H, zoom=zoom_val
-        )
-
-    def apply_radtan_to_map(map_x, map_y):
-        x_norm = (map_x - cx) / fx
-        y_norm = (map_y - cy) / fy
-        x_dist, y_dist = apply_radtan_distortion(x_norm, y_norm, k1, k2, p1, p2)
-        return x_dist * fx + cx, y_dist * fy + cy
-
-    def finalize_map(ux, uy):
-        if apply_radtan:
-            ux, uy = apply_radtan_to_map(ux, uy)
-        return np.nan_to_num(ux, nan=-1), np.nan_to_num(uy, nan=-1)
+    build_map = make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom)
 
     rgb_paths = find_rgb_paths(rgb_dir, step_size)
     print(f"Found {len(rgb_paths)} images (step={step_size}), method={method}, "
-          f"crop_valid_bbox={crop_valid_bbox}, radtan={apply_radtan}")
-
-    precomputed_map = None
-    precomputed_mask = None
-    precomputed_crop_box = None
+          f"crop_valid_bbox={crop_valid_bbox}, "
+          f"radtan={any(d != 0.0 for d in distortion)}")
 
     if depth_dir is None:
         print(f"Single depth mode (Z0={z0_fixed}) — computing undistortion map once")
-        zoom_eff = zoom if method == "closed_form" else (zoom or 1.4)
-        undist_x, undist_y = finalize_map(*build_map(z0_fixed, zoom))
-        precomputed_map = (undist_x, undist_y)
-        precomputed_mask = compute_valid_mask(undist_x, undist_y, W, H)
-        cv2.imwrite(f"{mask_dir}/mask.png", precomputed_mask)
+        fixed_map = build_map(z0_fixed)
+        fixed_mask = compute_valid_mask(*fixed_map, W, H)
+        cv2.imwrite(f"{mask_dir}/mask.png", fixed_mask)
         print(f"Saved shared mask: {mask_dir}/mask.png")
 
         out_W, out_H = W, H
-        out_fx, out_fy = fx * zoom_eff, fy * zoom_eff
+        out_fx, out_fy = fx * zoom, fy * zoom
         out_cx, out_cy = cx, cy
-
+        fixed_box = None
         if crop_valid_bbox:
-            precomputed_crop_box = find_largest_valid_rectangle(precomputed_mask)
-            y0, y1, x0, x1 = precomputed_crop_box
-            new_cx, new_cy = adjust_intrinsics_for_crop(out_cx, out_cy, precomputed_crop_box)
+            fixed_box = largest_valid_rectangle(fixed_mask)
+            y0, y1, x0, x1 = fixed_box
             out_W, out_H = x1 - x0, y1 - y0
-            out_cx, out_cy = new_cx, new_cy
+            out_cx, out_cy = cx - x0, cy - y0
             print(f"Inscribed valid rectangle: rows[{y0}:{y1}], cols[{x0}:{x1}] "
-                  f"({x1 - x0}x{y1 - y0}, no invalid pixels)")
+                  f"({out_W}x{out_H}, no invalid pixels)")
             print(f"Adjusted intrinsics for cropped output: "
-                  f"fx={out_fx:.2f}, fy={out_fy:.2f}, cx={new_cx:.2f}, cy={new_cy:.2f}")
+                  f"fx={out_fx:.2f}, fy={out_fy:.2f}, cx={out_cx:.2f}, cy={out_cy:.2f}")
 
-        write_output_calibration(calib_path, out_W, out_H,
-                                 out_fx, out_fy, out_cx, out_cy, zoom)
+        write_calibration(calib_path, out_W, out_H, out_fx, out_fy, out_cx, out_cy, zoom)
 
     for rgb_path in rgb_paths:
         name = os.path.splitext(os.path.basename(rgb_path))[0]
         out_path = f"{output_dir}/{name}.png"
-        mask_path = f"{mask_dir}/{name}.png"
-        if os.path.exists(out_path):
+        if os.path.exists(out_path) and not args.overwrite:
+            print(f"Exists: {name}.png → skip (use --overwrite to recompute)")
             continue
 
         img = cv2.imread(rgb_path)
         if img is None:
+            print(f"Unreadable: {rgb_path} → skip")
+            continue
+        if img.shape[:2] != (H, W):
+            print(f"Size {img.shape[1]}x{img.shape[0]} != camera {W}x{H}: {name} → skip")
             continue
 
-        if precomputed_map is not None:
-            undist_x, undist_y = precomputed_map
-            corrected = cv2.remap(
-                img, undist_x, undist_y, cv2.INTER_LINEAR,
-                borderMode=cv2.BORDER_CONSTANT, borderValue=0
-            )
-            mask = precomputed_mask
-            crop_box = precomputed_crop_box
+        if depth_dir is None:
+            (map_x, map_y), mask, box = fixed_map, fixed_mask, fixed_box
         else:
-            depth = load_depth(name, depth_dir, z0_fixed, W, H)
+            depth = load_depth(name, depth_dir, W, H)
             if depth is None:
                 print(f"No depth: {name} → skip")
                 continue
+            map_x, map_y = build_map(depth)
+            mask = compute_valid_mask(map_x, map_y, W, H)
+            cv2.imwrite(f"{mask_dir}/{name}.png", mask)
+            box = largest_valid_rectangle(mask) if crop_valid_bbox else None
 
-            zoom_val = zoom if method == "closed_form" else (zoom or 1.4)
-            undist_x, undist_y = finalize_map(*build_map(depth, zoom_val))
-            corrected, mask = remap_with_mask(img, undist_x, undist_y)
-            cv2.imwrite(mask_path, mask)
+        corrected = cv2.remap(img, map_x, map_y, cv2.INTER_LINEAR,
+                              borderMode=cv2.BORDER_CONSTANT, borderValue=0)
 
-            crop_box = find_largest_valid_rectangle(mask) if crop_valid_bbox else None
-
-        if crop_valid_bbox and crop_box is not None:
-            # Crop first: every pixel inside the inscribed rectangle is valid,
-            # so the alpha channel adds nothing and the BGRA round-trip is skipped.
-            corrected_out = crop_to_inscribed_rectangle(corrected, crop_box)
+        if box is not None:
+            # Every pixel inside the inscribed rectangle is valid, so no alpha is needed.
+            y0, y1, x0, x1 = box
+            out = corrected[y0:y1, x0:x1]
         else:
-            corrected_out = to_rgba(corrected, mask)
+            out = cv2.cvtColor(corrected, cv2.COLOR_BGR2BGRA)
+            out[..., 3] = mask
 
-        cv2.imwrite(out_path, corrected_out)
-        print(f"Saved: {name}.png ({corrected_out.shape[1]}x{corrected_out.shape[0]}, "
-              f"{corrected_out.shape[2]} channels)")
+        cv2.imwrite(out_path, out)
+        print(f"Saved: {name}.png ({out.shape[1]}x{out.shape[0]}, {out.shape[2]} channels)")
 
     print("Done.")
 
