@@ -8,11 +8,11 @@ warps the underwater image into a refraction-free pinhole image, so that it
 can be used directly by standard tools such as COLMAP.
 
 <p align="center">
-  <img src="figs/G0018611.JPG" height="259" alt="Raw underwater image">
-  &nbsp;
-  <img src="figs/G0018611_ours.png" height="259" alt="Refraction-corrected image">
+  <img src="figs/mar24_gp1_colmap_opt_teaser.png" width="49%" alt="COLMAP reconstruction from raw underwater images">
+  <img src="figs/mar24_gp1_ours_teaser.png" width="49%" alt="COLMAP reconstruction from Refrax-corrected images">
 </p>
-<p align="center"><em>Left: raw underwater image. Right: corrected by Refrax.</em></p>
+<p align="center"><em>COLMAP reconstruction of a reef transect, top and side views. Left: raw
+images, the camera trajectory (red) bends. Right: Refrax-corrected images, the trajectory (green) stays flat.</em></p>
 
 > **Paper:** TODO — title, authors, venue, link.
 
@@ -33,6 +33,13 @@ All scripts read a YAML config; see [`configs/lizardisland.yaml`](configs/lizard
 ```bash
 pixi run remove-refraction configs/lizardisland.yaml
 ```
+
+<p align="center">
+  <img src="figs/G0018611.JPG" height="259" alt="Raw underwater image">
+  &nbsp;
+  <img src="figs/G0018611_ours.png" height="259" alt="Refraction-corrected image">
+</p>
+<p align="center"><em>Left: raw underwater image. Right: corrected by Refrax.</em></p>
 
 For every image in `paths.rgb_dir` this writes:
 
