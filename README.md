@@ -19,7 +19,8 @@ can be used directly by standard tools such as COLMAP.
   </em>
 </p>
 
-> **Paper:** TODO — title, authors, venue, link.
+> **Paper:** *Image-Space Refraction Correction for Underwater 3D Reconstruction: Warping Flat-Port Views into Pinhole Perspective*  
+> Submitted to ICRA 2027 · arXiv coming soon
 
 ## Installation
 
@@ -130,13 +131,3 @@ core/
 evaluation/
   planarity.py            planarity metrics of COLMAP reconstructions
 ```
-
-## Citation
-
-```bibtex
-TODO
-```
-
-## License
-
-TODO
