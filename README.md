@@ -11,8 +11,13 @@ can be used directly by standard tools such as COLMAP.
   <img src="figs/mar24_gp1_colmap_opt_teaser.png" width="49%" alt="COLMAP reconstruction from raw underwater images">
   <img src="figs/mar24_gp1_ours_teaser.png" width="49%" alt="COLMAP reconstruction from Refrax-corrected images">
 </p>
-<p align="center"><em>COLMAP reconstruction of Lizard Island coral reef, top and side views.
-Left: raw images, the camera trajectory (red) bends. Right: Refrax-corrected images, the trajectory (green) stays flat.</em></p>
+<p align="center">
+  <em>
+    COLMAP reconstruction of Lizard Island coral reef, top and side views.<br><br>
+    Left: raw images, the camera trajectory (red) bends.<br>
+    Right: Refrax-corrected images, the trajectory (green) stays flat.
+  </em>
+</p>
 
 > **Paper:** TODO — title, authors, venue, link.
 
