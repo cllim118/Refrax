@@ -119,14 +119,15 @@ print the metrics only.
 
 ## Repository layout
 
-```
-remove_refraction.py      main script: refraction removal
-visualise_refraction.py   synthetic checkerboard visualisation
-configs/                  example configuration
-core/
-  optics.py               ray tracing through the flat port, radtan distortion
-  undistort.py            correction map
-  scale.py                automatic zoom selection
+```text
+.
+├── remove_refraction.py       # Main refraction-removal script
+├── visualise_refraction.py    # Synthetic checkerboard visualisation
+├── configs/                   # Example configurations
+└── core/
+    ├── optics.py              # Ray tracing through the flat port
+    ├── undistort.py           # Refraction correction map
+    └── scale.py               # Automatic output scaling
   config.py               config parsing
 evaluation/
   planarity.py            planarity metrics of COLMAP reconstructions
