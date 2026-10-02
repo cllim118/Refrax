@@ -128,7 +128,3 @@ print the metrics only.
     ├── optics.py              # Ray tracing through the flat port
     ├── undistort.py           # Refraction correction map
     └── scale.py               # Automatic output scaling
-  config.py               config parsing
-evaluation/
-  planarity.py            planarity metrics of COLMAP reconstructions
-```
