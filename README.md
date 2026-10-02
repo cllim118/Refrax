@@ -13,7 +13,7 @@ can be used directly by standard tools such as COLMAP.
 </p>
 <p align="center">
   <em>
-    COLMAP reconstruction of Lizard Island coral reef, top and side views.<br><br>
+    COLMAP reconstruction of Lizard Island coral reef, top and side views.<br>
     Left: raw images, the camera trajectory (red) bends.<br>
     Right: Refrax-corrected images, the trajectory (green) stays flat.
   </em>
