@@ -88,9 +88,11 @@ Simulates a checkerboard at depth `z0_fixed` seen through the housing, corrects
 it, and plots the per-pixel displacement.
 
 <p align="center">
-  <img src="figs/refraction_visualise.png" alt="Checkerboard through the flat port, corrected checkerboard, and per-pixel displacement">
+  <img src="figs/refraction_visualise.png" alt="Underwater checkerboard, corrected checkerboard, and per-pixel displacement">
 </p>
-<p align="center"><em>Left to right: checkerboard seen through the housing, after correction, and per-pixel displacement.</em></p>
+<p align="center">
+  <em>Left to right: checkerboard underwater, corrected image, and per-pixel displacement.</em>
+</p>
 
 ### Planarity evaluation
 
