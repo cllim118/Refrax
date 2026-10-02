@@ -7,6 +7,13 @@ housing, Refrax traces every pixel through the air–glass–water interfaces an
 warps the underwater image into a refraction-free pinhole image, so that it
 can be used directly by standard tools such as COLMAP.
 
+<p align="center">
+  <img src="figs/G0018611.JPG" height="259" alt="Raw underwater image">
+  &nbsp;
+  <img src="figs/G0018611_ours.png" height="259" alt="Refraction-corrected image">
+</p>
+<p align="center"><em>Left: raw underwater image. Right: corrected by Refrax.</em></p>
+
 > **Paper:** TODO — title, authors, venue, link.
 
 ## Installation
@@ -16,9 +23,6 @@ The environment is managed with [pixi](https://pixi.sh):
 ```bash
 pixi install
 ```
-
-Alternatively, install `numpy scipy matplotlib opencv pyyaml` (Python ≥ 3.10)
-with your package manager of choice and run the scripts with `python`.
 
 ## Usage
 
@@ -67,6 +71,11 @@ pixi run visualise-refraction configs/lizardisland.yaml
 
 Simulates a checkerboard at depth `z0_fixed` seen through the housing, corrects
 it, and plots the per-pixel displacement.
+
+<p align="center">
+  <img src="figs/refraction_visualise.png" alt="Checkerboard through the flat port, corrected checkerboard, and per-pixel displacement">
+</p>
+<p align="center"><em>Left to right: checkerboard seen through the housing, after correction, and per-pixel displacement.</em></p>
 
 ### Planarity evaluation
 
