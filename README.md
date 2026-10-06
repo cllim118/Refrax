@@ -20,7 +20,7 @@ can be used directly by standard tools such as COLMAP.
 </p>
 
 > **Paper:** *Image-Space Refraction Correction for Underwater 3D Reconstruction: Warping Flat-Port Views into Pinhole Perspective*  
-> Submitted to ICRA 2027 · arXiv coming soon
+> arXiv coming soon
 
 ## Installation
 
