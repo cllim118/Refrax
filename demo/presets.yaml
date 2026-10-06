@@ -1,0 +1,35 @@
+# Camera presets for the demo, and the sample frames each one corrects.
+#
+# `camera` and `housing` follow configs/*.yaml (the port normal is +z and the
+# inside of the housing is air); `z0` is the default scene depth. The first
+# preset is the default. Samples are frames of the Hugging Face dataset
+# `dataset` (path without extension); demo/samples/<path with / replaced
+# by _>.jpg is its thumbnail.
+dataset: cllim118/refrax-dataset
+
+presets:
+  gopro10_linear:
+    label: GoPro 10, Linear (refrax-dataset)
+    camera: {W: 1920, H: 1080, fx: 919.896, fy: 920.235, cx: 959.324, cy: 544.850,
+             k1: 0.01749284, k2: -0.00298329, p1: 0.00171351, p2: 0.00045356}
+    # TODO: provisional (Lizard Island housing); replace with the pool housing and depth.
+    housing: {rflat: 0.02, tglass: 0.002, mu_g: 1.47, mu_w: 1.34}
+    z0: 1.0
+    samples:
+      - gopro10_linear/1000061852181833215
+      - gopro10_linear/1000061865528499775
+      - gopro10_linear/1000061878875166335
+      - gopro10_linear/1000061892221832895
+
+  gopro11_linear:
+    label: GoPro 11, Linear (refrax-dataset)
+    camera: {W: 1920, H: 1080, fx: 916.122, fy: 916.272, cx: 954.900, cy: 539.712,
+             k1: 0.01777178, k2: -0.00635623, p1: 0.00057202, p2: -0.00074205}
+    # TODO: provisional (Lizard Island housing); replace with the pool housing and depth.
+    housing: {rflat: 0.02, tglass: 0.002, mu_g: 1.47, mu_w: 1.34}
+    z0: 1.0
+    samples:
+      - gopro11_linear/1000053476400000000
+      - gopro11_linear/1000053484000000000
+      - gopro11_linear/1000053506800000000
+      - gopro11_linear/1000053522000000000

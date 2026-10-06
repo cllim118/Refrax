@@ -7,6 +7,8 @@ housing, Refrax traces every pixel through the air–glass–water interfaces an
 warps the underwater image into a refraction-free pinhole image, so that it
 can be used directly by standard tools such as COLMAP.
 
+**Demo:** https://huggingface.co/spaces/cllim118/refrax-demo
+
 <p align="center">
   <img src="figs/mar24_gp1_colmap_opt_teaser.png" width="49%" alt="COLMAP reconstruction from raw underwater images">
   <img src="figs/mar24_gp1_ours_teaser.png" width="49%" alt="COLMAP reconstruction from Refrax-corrected images">
@@ -20,7 +22,7 @@ can be used directly by standard tools such as COLMAP.
 </p>
 
 > **Paper:** *Image-Space Refraction Correction for Underwater 3D Reconstruction: Warping Flat-Port Views into Pinhole Perspective*  
-> Submitted to ICRA 2027 · arXiv coming soon
+> Under review · arXiv coming soon
 
 ## Installation
 
