@@ -28,9 +28,26 @@ can be used directly by standard tools such as COLMAP.
 > **Paper:** *Image-Space Refraction Correction for Underwater 3D Reconstruction: Warping Flat-Port Views into Pinhole Perspective*  
 > Under review
 
-## Installation
+## Getting Started
 
-The environment is managed with [pixi](https://pixi.sh):
+We use the package management tool [pixi](https://pixi.sh). If you haven't
+installed pixi yet, run the following command in your terminal:
+
+```bash
+curl -fsSL https://pixi.sh/install.sh | bash
+```
+
+After installation, restart your terminal or source your shell for the changes
+to take effect. For more details, refer to the
+[pixi documentation](https://pixi.sh/latest/).
+
+Clone the repository and navigate to the project directory:
+
+```bash
+git clone https://github.com/cllim118/Refrax.git && cd Refrax
+```
+
+Install the environment:
 
 ```bash
 pixi install
