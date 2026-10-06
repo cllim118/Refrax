@@ -47,12 +47,6 @@ Clone the repository and navigate to the project directory:
 git clone https://github.com/cllim118/Refrax.git && cd Refrax
 ```
 
-Install the environment:
-
-```bash
-pixi install
-```
-
 ## Usage
 
 All scripts read a YAML config; see [`configs/lizardisland.yaml`](configs/lizardisland.yaml).
