@@ -8,9 +8,7 @@ warps the underwater image into a refraction-free pinhole image, so that it
 can be used directly by standard tools such as COLMAP.
 
 <p align="center">
-  <a href="https://huggingface.co/spaces/cllim118/refrax-demo">
-    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Hugging%20Face-yellow?style=for-the-badge" alt="Demo on Hugging Face">
-  </a>
+  <a href="https://huggingface.co/spaces/cllim118/refrax-demo"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Hugging%20Face-yellow?style=for-the-badge" alt="Demo on Hugging Face"></a>
   &nbsp;&nbsp;
   <img src="https://img.shields.io/badge/Paper-Coming%20Soon-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white" alt="Paper coming soon">
 </p>
