@@ -1,15 +1,18 @@
+# EXAMPLE values for a GoPro 10 in Linear mode (refrax-dataset).
+# Replace them with your own camera, housing and paths.
+
 # In-air pinhole intrinsics (px) and optional radial-tangential distortion
 camera:
-  W: 593
-  H: 518
-  fx: 288.28
-  fy: 287.51
-  cx: 296.892
-  cy: 260.068
-  k1: 0
-  k2: 0
-  p1: 0
-  p2: 0
+  W: 1920
+  H: 1080
+  fx: 919.896
+  fy: 920.235
+  cx: 959.324
+  cy: 544.850
+  k1: 0.01749284
+  k2: -0.00298329
+  p1: 0.00171351
+  p2: 0.00045356
 
 # Flat-port housing. Lengths in the same unit as depths (metres here).
 housing:

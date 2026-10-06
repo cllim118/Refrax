@@ -49,12 +49,23 @@ git clone https://github.com/cllim118/Refrax.git && cd Refrax
 
 ## Usage
 
-All scripts read a YAML config; see [`configs/lizardisland.yaml`](configs/lizardisland.yaml).
+### Configuration
+
+Every script takes a YAML config describing your camera, housing and data.
+[`configs/dataset.yaml`](configs/dataset.yaml) holds **example values** for a
+GoPro 10 (Linear mode) from refrax-dataset; replace them with your own:
+
+| Section | What to set |
+| --- | --- |
+| `camera` | in-air intrinsics (and distortion) of your camera, from a standard in-air calibration |
+| `housing` | port normal, refractive indices, camera-to-port distance and glass thickness of your housing |
+| `paths` | where your input images are and where outputs should go |
+| `correction` | scene depth, zoom and cropping options (see below) |
 
 ### Remove refraction
 
 ```bash
-pixi run remove-refraction configs/lizardisland.yaml
+pixi run remove-refraction configs/dataset.yaml
 ```
 
 <p align="center">
@@ -99,7 +110,7 @@ assumed to be distorted and the distortion is removed in the same warp.
 ### Visualise the correction
 
 ```bash
-pixi run visualise-refraction configs/lizardisland.yaml
+pixi run visualise-refraction configs/dataset.yaml
 ```
 
 Simulates a checkerboard at depth `z0_fixed` seen through the housing, corrects
@@ -140,7 +151,7 @@ print the metrics only.
 .
 ├── remove_refraction.py       # Main refraction-removal script
 ├── visualise_refraction.py    # Synthetic checkerboard visualisation
-├── configs/                   # Example configurations
+├── configs/                   # Config with example values (GoPro 10)
 └── core/
     ├── optics.py              # Ray tracing through the flat port
     ├── undistort.py           # Refraction correction map

@@ -1,7 +1,7 @@
 """Visualises the refraction correction on a synthetic checkerboard.
 
 Usage:
-    python visualise_refraction.py configs/lizardisland.yaml
+    python visualise_refraction.py configs/dataset.yaml
 
 Renders a checkerboard at depth correction.z0_fixed as seen through the
 housing, corrects it with the configured zoom, and plots the

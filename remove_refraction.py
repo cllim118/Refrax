@@ -1,7 +1,7 @@
 """Removes flat-port refraction from underwater images.
 
 Usage:
-    python remove_refraction.py configs/lizardisland.yaml [--overwrite]
+    python remove_refraction.py configs/dataset.yaml [--overwrite]
 
 Every image in paths.rgb_dir is warped to a refraction-free pinhole image with
 focal length zoom * (fx, fy). Outputs:
