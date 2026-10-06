@@ -7,7 +7,11 @@ housing, Refrax traces every pixel through the air–glass–water interfaces an
 warps the underwater image into a refraction-free pinhole image, so that it
 can be used directly by standard tools such as COLMAP.
 
-**Demo:** https://huggingface.co/spaces/cllim118/refrax-demo
+<p align="center">
+  <a href="https://huggingface.co/spaces/cllim118/refrax-demo">
+    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Try%20the%20Demo-Hugging%20Face%20Spaces-yellow?style=for-the-badge" alt="Try the demo on Hugging Face Spaces">
+  </a>
+</p>
 
 <p align="center">
   <img src="assets/mar24_gp1_colmap_opt_teaser.png" width="49%" alt="COLMAP reconstruction from raw underwater images">
