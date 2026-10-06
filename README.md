@@ -10,8 +10,8 @@ can be used directly by standard tools such as COLMAP.
 **Demo:** https://huggingface.co/spaces/cllim118/refrax-demo
 
 <p align="center">
-  <img src="figs/mar24_gp1_colmap_opt_teaser.png" width="49%" alt="COLMAP reconstruction from raw underwater images">
-  <img src="figs/mar24_gp1_ours_teaser.png" width="49%" alt="COLMAP reconstruction from Refrax-corrected images">
+  <img src="assets/mar24_gp1_colmap_opt_teaser.png" width="49%" alt="COLMAP reconstruction from raw underwater images">
+  <img src="assets/mar24_gp1_ours_teaser.png" width="49%" alt="COLMAP reconstruction from Refrax-corrected images">
 </p>
 <p align="center">
   <em>
@@ -43,9 +43,9 @@ pixi run remove-refraction configs/lizardisland.yaml
 ```
 
 <p align="center">
-  <img src="figs/G0018611.JPG" height="259" alt="Raw underwater image">
+  <img src="assets/G0018611.JPG" height="259" alt="Raw underwater image">
   &emsp;&emsp;
-  <img src="figs/G0018611_ours.png" height="259" alt="Refraction-corrected image">
+  <img src="assets/G0018611_ours.png" height="259" alt="Refraction-corrected image">
 </p>
 
 <p align="center">
@@ -91,7 +91,7 @@ Simulates a checkerboard at depth `z0_fixed` seen through the housing, corrects
 it, and plots the per-pixel displacement.
 
 <p align="center">
-  <img src="figs/refraction_visualise.png" alt="Underwater checkerboard, corrected checkerboard, and per-pixel displacement">
+  <img src="assets/refraction_visualise.png" alt="Underwater checkerboard, corrected checkerboard, and per-pixel displacement">
 </p>
 <p align="center">
   <em>Left to right: checkerboard underwater, corrected image, and per-pixel displacement.</em>
