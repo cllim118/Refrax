@@ -9,8 +9,9 @@ can be used directly by standard tools such as COLMAP.
 
 <p align="center">
   <a href="https://huggingface.co/spaces/cllim118/refrax-demo">
-    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20DEMO-yellow?style=for-the-badge" alt="Demo">
+    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Demo-Hugging%20Face-yellow?style=for-the-badge" alt="Demo on Hugging Face">
   </a>
+  <img src="https://img.shields.io/badge/Paper-Coming%20Soon-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white" alt="Paper coming soon">
 </p>
 
 <p align="center">
@@ -26,7 +27,7 @@ can be used directly by standard tools such as COLMAP.
 </p>
 
 > **Paper:** *Image-Space Refraction Correction for Underwater 3D Reconstruction: Warping Flat-Port Views into Pinhole Perspective*  
-> Under review · arXiv coming soon
+> Under review
 
 ## Installation
 
