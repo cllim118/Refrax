@@ -9,7 +9,7 @@ can be used directly by standard tools such as COLMAP.
 
 <p align="center">
   <a href="https://huggingface.co/spaces/cllim118/refrax-demo">
-    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Try%20the%20Demo-Hugging%20Face%20Spaces-yellow?style=for-the-badge" alt="Try the demo on Hugging Face Spaces">
+    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20DEMO-yellow?style=for-the-badge" alt="Demo">
   </a>
 </p>
 
