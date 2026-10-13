@@ -156,6 +156,25 @@ deviation of points seen from the plane centre, and the curvature of a
 rotationally symmetric quadric fitted to the residuals. Add `--no-plot` to
 print the metrics only.
 
+### Parameter sensitivity
+
+`evaluation/parameter_sensitivity.py` perturbs one refraction parameter at a
+time (scene depth `Z0`, camera-to-port distance `rflat`, glass thickness
+`tglass`, refractive indices `mu_w` and `mu_g`) and measures how far every pixel
+moves in the corrected image, using the forward model at the configured depth
+and zoom:
+
+```bash
+pixi run parameter-sensitivity configs/dataset.yaml [--out DIR] [--no-plot]
+```
+
+For each parameter and perturbation (both signs, several magnitudes, set in
+`PERTURBATIONS`) it reports the median, 95th-percentile and maximum
+displacement, raw and after removing the best uniform scale (which a
+focal-length change absorbs), and the non-linearity of the response. It writes
+`sensitivity.csv`, displacement maps (`maps.png`) and displacement against
+perturbation size (`curves.png`) to `output/parameter_sensitivity` by default.
+
 ## Repository layout
 
 ```text
@@ -163,6 +182,9 @@ print the metrics only.
 ├── remove_refraction.py       # Main refraction-removal script
 ├── visualise_refraction.py    # Synthetic checkerboard visualisation
 ├── configs/                   # Config with example values (GoPro 10)
+├── evaluation/
+│   ├── planarity.py           # Planarity of COLMAP reconstructions
+│   └── parameter_sensitivity.py  # Pixel displacement per refraction parameter
 └── core/
     ├── optics.py              # Ray tracing through the flat port
     ├── undistort.py           # Closed-form correction map

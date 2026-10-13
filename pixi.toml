@@ -8,6 +8,7 @@ version = "0.1.0"
 remove-refraction = "python remove_refraction.py"
 visualise-refraction = "python visualise_refraction.py"
 planarity = "python evaluation/planarity.py"
+parameter-sensitivity = "python evaluation/parameter_sensitivity.py"
 
 [dependencies]
 python = ">=3.10"
