@@ -25,9 +25,11 @@ from core.optics import matrix_K, apply_radtan_distortion
 from core.scale import select_zoom
 from core.undistort import (compute_housing_geometry, build_undistort_map_closed_form,
                             forward_map, zoom_forward_map, forward_map_canvas)
+from core.undistort_newton import build_undistort_map_newton
 
 IMAGE_EXTS = ["*.jpg", "*.JPG", "*.jpeg", "*.JPEG", "*.png", "*.PNG",
               "*.bmp", "*.BMP", "*.tiff", "*.TIFF"]
+METHODS = ("closed_form", "newton")
 
 
 def find_rgb_paths(rgb_dir, step_size):
@@ -46,7 +48,7 @@ def load_depth(name, depth_dir, W, H):
     return np.clip(depth, 1e-3, None)
 
 
-def make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom, canvas=None):
+def make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom, canvas=None):
     """Returns build_map(depth) -> (map_x, map_y), float32 maps for cv2.remap.
 
     The maps cover canvas = (out_W, out_H, origin), the source frame by default.
@@ -54,13 +56,20 @@ def make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom, canvas=Non
     non-zero, the map points into the distorted (raw) image.
     """
     _, K_inv = matrix_K(fx, fy, cx, cy)
-    P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
+    if method == "closed_form":
+        P2, ray_water = compute_housing_geometry(H, W, K_inv, **housing)
+    newton_kwargs = dict(K_inv=K_inv, **housing)
     apply_radtan = any(d != 0.0 for d in distortion)
     out_W, out_H, origin = canvas if canvas is not None else (W, H, (0.0, 0.0))
 
     def build_map(depth):
-        map_x, map_y = build_undistort_map_closed_form(
-            P2, ray_water, depth, fx, fy, cx, cy, out_H, out_W, zoom=zoom, origin=origin)
+        if method == "closed_form":
+            map_x, map_y = build_undistort_map_closed_form(
+                P2, ray_water, depth, fx, fy, cx, cy, out_H, out_W, zoom=zoom, origin=origin)
+        else:
+            map_x, map_y = build_undistort_map_newton(
+                fx, fy, cx, cy, depth, newton_kwargs, out_W, out_H, zoom=zoom,
+                origin=origin, src_size=(W, H))
 
         if apply_radtan:
             x_dist, y_dist = apply_radtan_distortion(
@@ -73,7 +82,7 @@ def make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom, canvas=Non
     return build_map
 
 
-def fit_canvas(W, H, fx, fy, cx, cy, housing, distortion, zoom, z0):
+def fit_canvas(method, W, H, fx, fy, cx, cy, housing, distortion, zoom, z0):
     """Canvas (out_W, out_H, origin) holding the whole image corrected at depth z0.
 
     Starts from the bounding box of the zoomed forward map, with one pixel of slack
@@ -90,7 +99,7 @@ def fit_canvas(W, H, fx, fy, cx, cy, housing, distortion, zoom, z0):
         raise ValueError(f"fit_canvas: corrected image would be {out_W}x{out_H} for a "
                          f"{W}x{H} source; check the housing parameters and zoom ({zoom}).")
 
-    build_map = make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom,
+    build_map = make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom,
                                  canvas=(out_W, out_H, (x0, y0)))
     valid = compute_valid_mask(*build_map(z0), W, H) > 0
     rows, cols = np.flatnonzero(valid.any(axis=1)), np.flatnonzero(valid.any(axis=0))
@@ -158,6 +167,10 @@ def main():
     args = parser.parse_args()
 
     cfg = load_config(args.config)
+    method = cfg.get("method", "closed_form")
+    if method not in METHODS:
+        raise ValueError(f"method must be one of {METHODS}, got {method!r}")
+
     W, H, fx, fy, cx, cy = camera_params(cfg)
     distortion = distortion_params(cfg)
     housing = housing_params(cfg)
@@ -186,16 +199,16 @@ def main():
 
     canvas = (W, H, (0.0, 0.0))
     if fit:
-        canvas = fit_canvas(W, H, fx, fy, cx, cy, housing, distortion, zoom, z0_fixed)
+        canvas = fit_canvas(method, W, H, fx, fy, cx, cy, housing, distortion, zoom, z0_fixed)
         print(f"Fitted canvas: {canvas[0]}x{canvas[1]}, origin=({canvas[2][0]:.0f}, "
               f"{canvas[2][1]:.0f}) in the source frame")
 
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(mask_dir, exist_ok=True)
-    build_map = make_map_builder(W, H, fx, fy, cx, cy, housing, distortion, zoom, canvas)
+    build_map = make_map_builder(method, W, H, fx, fy, cx, cy, housing, distortion, zoom, canvas)
 
     rgb_paths = find_rgb_paths(rgb_dir, step_size)
-    print(f"Found {len(rgb_paths)} images (step={step_size}), "
+    print(f"Found {len(rgb_paths)} images (step={step_size}), method={method}, "
           f"fit_canvas={fit}, crop_valid_bbox={crop_valid_bbox}, "
           f"radtan={any(d != 0.0 for d in distortion)}")
 

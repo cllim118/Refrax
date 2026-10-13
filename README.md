@@ -88,8 +88,13 @@ For every image in `paths.rgb_dir` this writes:
 
 Existing outputs are skipped; pass `--overwrite` to recompute them.
 
-**Method.** The pixel grid is traced forward through the housing onto the scene
-plane, and the resulting map is inverted by interpolation.
+**Correction methods** (`method`):
+
+- `closed_form` — traces the pixel grid forward through the housing and inverts
+  the resulting map by interpolation. Fast; the default.
+- `newton` — solves the inverse trace per pixel with Newton's method.
+
+The two agree to within a few hundredths of a pixel.
 
 **Depth.** Flat-port refraction is depth-dependent. With `paths.depth_dir: null`
 the scene is assumed to lie at depth `correction.z0_fixed` and a single map is
@@ -160,5 +165,6 @@ print the metrics only.
 ├── configs/                   # Config with example values (GoPro 10)
 └── core/
     ├── optics.py              # Ray tracing through the flat port
-    ├── undistort.py           # Refraction correction map
+    ├── undistort.py           # Closed-form correction map
+    ├── undistort_newton.py    # Newton correction map
     └── scale.py               # Automatic output scaling

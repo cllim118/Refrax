@@ -1,6 +1,8 @@
 # EXAMPLE values for a GoPro 10 in Linear mode (refrax-dataset).
 # Replace them with your own camera, housing and paths.
 
+method: closed_form   # "closed_form" or "newton"
+
 # In-air pinhole intrinsics (px) and optional radial-tangential distortion
 camera:
   W: 1920
