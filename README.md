@@ -58,7 +58,7 @@ GoPro 10 (Linear mode) from refrax-dataset; replace them with your own:
 | Section | What to set |
 | --- | --- |
 | `camera` | in-air intrinsics (and distortion) of your camera, from a standard in-air calibration |
-| `housing` | port normal, refractive indices, camera-to-port distance and glass thickness of your housing |
+| `housing` | port normal, refractive indices, camera-to-port distance `d0` and glass thickness of your housing (`d0` was formerly `rflat`, which is still accepted) |
 | `paths` | where your input images are and where outputs should go |
 | `correction` | scene depth, zoom and cropping options (see below) |
 
@@ -159,7 +159,7 @@ print the metrics only.
 ### Parameter sensitivity
 
 `evaluation/parameter_sensitivity.py` perturbs one refraction parameter at a
-time (scene depth `Z0`, camera-to-port distance `rflat`, glass thickness
+time (scene depth `Z0`, camera-to-port distance `d0`, glass thickness
 `tglass`, refractive indices `mu_w` and `mu_g`) and measures how far every pixel
 moves in the corrected image, using the forward model at the configured depth
 and zoom:

@@ -6,7 +6,7 @@ Usage:
 Every underwater pixel is mapped to its position in the corrected image with
 the forward model of core/undistort.py (forward map at depth z0_fixed, scaled
 by the zoom), for the nominal configuration and for one parameter perturbed at
-a time: the scene depth Z0, the camera-to-port distance d0 (rflat), the glass
+a time: the scene depth Z0, the camera-to-port distance d0, the glass
 thickness t_g (tglass) and the refractive indices mu_w and mu_g. The
 displacement between the perturbed and the nominal position is the error a
 correction built with the nominal value makes when the true value is the
@@ -45,7 +45,7 @@ from core.undistort import compute_housing_geometry, forward_map, zoom_forward_m
 # parameter's unit; Z0 is relative to z0_fixed. `ref` is the delta shown in maps.png.
 PERTURBATIONS = {
     "Z0":     dict(label="Z0 (scene depth)",    unit="x z0", deltas=[0.05, 0.1, 0.25, 0.5],        ref=0.25),
-    "rflat":  dict(label="d0 (camera-to-port)", unit="m",    deltas=[0.0005, 0.001, 0.002, 0.005], ref=0.002),
+    "d0":     dict(label="d0 (camera-to-port)", unit="m",    deltas=[0.0005, 0.001, 0.002, 0.005], ref=0.002),
     "tglass": dict(label="t_g (glass)",         unit="m",    deltas=[0.0001, 0.00025, 0.0005, 0.001], ref=0.0005),
     "mu_w":   dict(label="mu_w (water)",        unit="",     deltas=[0.002, 0.005, 0.01, 0.02],    ref=0.01),
     "mu_g":   dict(label="mu_g (glass)",        unit="",     deltas=[0.01, 0.02, 0.05, 0.1],       ref=0.05),
@@ -149,7 +149,7 @@ def main():
     if zoom is None:
         zoom, _ = select_zoom(z0, W, H, fx, fy, cx, cy, housing,
                               in_bounds=not corr.get("fit_canvas", True))
-    print(f"Nominal: Z0={z0}, rflat={housing['rflat']}, tglass={housing['tglass']}, "
+    print(f"Nominal: Z0={z0}, d0={housing['d0']}, tglass={housing['tglass']}, "
           f"mu_w={housing['mu_w']}, mu_g={housing['mu_g']}, zoom={zoom:.4f}")
 
     q0 = corrected_positions(W, H, fx, fy, cx, cy, housing, z0, zoom)

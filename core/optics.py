@@ -43,11 +43,11 @@ def matrix_K(fx, fy, cx, cy):
     return K, np.linalg.inv(K)
 
 
-def trace_underwater(u, v, K_inv, n_port, rflat, tglass, Z0,
+def trace_underwater(u, v, K_inv, n_port, d0, tglass, Z0,
                       mu_a, mu_g, mu_w):
     """Traces pixels (u, v) through the housing onto the plane Z = Z0.
 
-    The port's inner surface lies at distance rflat from the camera centre
+    The port's inner surface lies at distance d0 from the camera centre
     along n_port, followed by glass of thickness tglass.
 
     Returns
@@ -60,7 +60,7 @@ def trace_underwater(u, v, K_inv, n_port, rflat, tglass, Z0,
     ray_air = normalize_batch(pixel @ K_inv.T)
 
     # 2. Air → glass interface
-    plane1 = n_port * rflat
+    plane1 = n_port * d0
     P1     = intersect_plane_batch(np.zeros(3), ray_air, plane1, n_port)
 
     # 3. Refract air → glass

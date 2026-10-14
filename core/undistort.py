@@ -4,13 +4,13 @@ from scipy.interpolate import griddata
 from core.optics import normalize_batch, refract_batch, intersect_plane_batch
 
 
-def compute_housing_geometry(H, W, K_inv, n_port, rflat, tglass, mu_a, mu_g, mu_w):
+def compute_housing_geometry(H, W, K_inv, n_port, d0, tglass, mu_a, mu_g, mu_w):
     """Depth-independent part of the trace: exit point P2 on the port and water ray per pixel."""
     u, v = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H, dtype=np.float32))
     pixels = np.stack([u, v, np.ones((H, W), dtype=np.float32)], axis=-1)
     rays   = normalize_batch(pixels @ K_inv.T)
 
-    plane1    = n_port * rflat
+    plane1    = n_port * d0
     P1        = intersect_plane_batch(np.zeros(3), rays, plane1, n_port)
     ray_glass = refract_batch(rays, n_port, mu_a, mu_g)
 

@@ -107,7 +107,7 @@ def main():
     img_corrected = cv2.remap(img_underwater, map_u_f, map_v_f, cv2.INTER_LINEAR)
 
     fig, axes = plt.subplots(1, 3, figsize=(16, 6))
-    fig.suptitle(f"{method} | rflat={housing['rflat']}, tglass={housing['tglass']}, "
+    fig.suptitle(f"{method} | d0={housing['d0']}, tglass={housing['tglass']}, "
                  f"Z0={Z0}, zoom={zoom:.4f}", fontsize=12)
     axes[0].imshow(img_underwater, cmap=blue_gray, vmin=0, vmax=255)
     axes[0].set_title(f"underwater ({W}x{H})")
