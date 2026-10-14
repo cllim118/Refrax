@@ -58,7 +58,7 @@ GoPro 10 (Linear mode) from refrax-dataset; replace them with your own:
 | Section | What to set |
 | --- | --- |
 | `camera` | in-air intrinsics (and distortion) of your camera, from a standard in-air calibration |
-| `housing` | port normal, refractive indices, camera-to-port distance `d0` and glass thickness of your housing (`d0` was formerly `rflat`, which is still accepted) |
+| `housing` | port normal, refractive indices, camera-to-port distance `d0` and glass thickness of your housing |
 | `paths` | where your input images are and where outputs should go |
 | `correction` | scene depth, zoom and cropping options (see below) |
 

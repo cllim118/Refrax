@@ -1,6 +1,4 @@
 """Loading and unpacking of the YAML configuration (see configs/)."""
-import warnings
-
 import numpy as np
 import yaml
 
@@ -25,11 +23,6 @@ def distortion_params(cfg):
 def housing_params(cfg):
     """Flat-port housing parameters, as keyword arguments for core.optics/core.undistort."""
     hs = cfg["housing"]
-    if "rflat" in hs:
-        if "d0" in hs:
-            raise ValueError("housing: set either d0 or the deprecated rflat, not both")
-        warnings.warn("housing.rflat is deprecated; rename it to d0", DeprecationWarning, stacklevel=2)
-        hs = {**hs, "d0": hs["rflat"]}
     return dict(
         n_port=np.array(hs["n_port"], dtype=float),
         d0=hs["d0"], tglass=hs["tglass"],
